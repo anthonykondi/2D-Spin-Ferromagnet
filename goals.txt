@@ -1,0 +1,26 @@
+Due date: June 26, 2026
+Goals:
+- Numerically determine the probability of ending up in a metastable state for varying 
+r = M/N (where M is the number of columns and N is the number of rows).
+
+Bonus:
+- Generalize the hamiltonian to a greater proximity (not just immediate neighbours).
+- Make the system more "physical" by adding time and explicit temperature so that it 
+evolves based on temperature (some kind of metropolis-hasting probabilistic update rule) 
+and set it at some temperature for a "long" time to get what the phase looks like. (more
+visual project)
+- Make time evolution animation
+
+Method:
+- start with random lattice of spins
+- update by randomly picking a spin and flip if it decreases energy
+- stop once no more flips can be made
+
+Classification:
+- All spin up or down
+- Horizontal stripes
+- Vertical stripes
+
+Ideas:
+- once it runs for enough iterations, sweep the whole lattice and bundle sites that are not
+yet minimized and iterate through them (repeat check until the bunble is empty)
