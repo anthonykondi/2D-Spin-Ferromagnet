@@ -3,22 +3,30 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import sys
 import os
+import csv
 
 rng = np.random.default_rng(123)
 
-with open("./images/.image_count.txt", "r") as file:
-    content = file.read()
-    print("before:", content)
+rows = []
+with open("testcsv.csv", "r") as file:
+    reader = csv.reader(file)
+    for row in reader:
+        rows.append(row)
+        print(row)
 
-count = 0
-with open("./images/.image_count.txt", "r") as file:
-    content = file.read()
-    count = int(content)
+for i, row in enumerate(rows):
+        if i > 0:
+            row[1] = str(int(row[1]) + 1000)
 
-count += 1
-with open("./images/.image_count.txt", "w") as file:
-    file.write(str(count))
+print("")
 
-with open("./images/.image_count.txt", "r") as file:
-    content = file.read()
-    print("after:", content)
+with open("testcsv.csv", "w", newline="") as file:
+    writer = csv.writer(file)
+
+    writer.writerows(rows)
+
+with open("testcsv.csv", "r") as file:
+    reader = csv.reader(file)
+    for row in reader:
+        rows.append(row)
+        print(row)

@@ -1,7 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+from pathlib import Path
+import os
 import time
+import csv
 
 rng = np.random.default_rng()
 
@@ -52,6 +54,7 @@ class Ferromagnet():
         self._lattice = self._fill_lattice()    # numpy array N x M, with random spin configuration
         self._energetic_cells = self._init_energetic_cells()   # RandomizedSet with energetically unfavourable spin coordinates
         self.stabilized = False    # not true in general, but it is very unlikely it will initiallize in a metastable state
+
 
     def __getitem__(self, coords):
         return self._lattice[coords]
@@ -177,7 +180,7 @@ class Ferromagnet():
         """reach a metastable state by flipping spins until energetic_spins set is empty"""
         while len(self._energetic_cells) > 0:
             self.energetic_update()
-            print(len(self._energetic_cells))
+            # print(len(self._energetic_cells))
         self.stabilized = True
 
     
@@ -197,3 +200,64 @@ class Ferromagnet():
             return "uniform"
 
 
+def sample_metastable_state(shape):
+    A = Ferromagnet(shape)
+    A.minimize_energy()
+    calssification = A.classify()
+    return calssification
+
+
+def accumulate_stats(shape):
+    classification = sample_metastable_state(shape)
+
+    try:
+        data = []
+        # loading the data into memory
+        with open(f"./statistics/metastable_N={shape[0]}_M={shape[1]}.csv", "r") as file:
+            reader = csv.reader(file)
+            for row in reader:
+                data.append(row)
+        
+        # updating the data
+        if classification == "uniform":
+            data[1][1] = str(int(data[1][1]) + 1)
+        elif classification == "horizontal":
+            data[2][1] = str(int(data[2][1]) + 1)
+        elif classification == "vertical":
+            data[3][1] = str(int(data[3][1]) + 1)
+
+        # writing the updated data to disk
+        with open(f"./statistics/metastable_N={shape[0]}_M={shape[1]}.csv", "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
+
+    except FileNotFoundError:
+        # initializing the data
+        data = [["metastable state", "count"],
+                ["uniform", 0],
+                ["horizontal", 0],
+                ["vertical", 0]]
+        
+        # updating the initialized data
+        if classification == "uniform":
+            data[1][1] += 1
+        elif classification == "horizontal":
+            data[2][1] += 1
+        elif classification == "vertical":
+            data[3][1] += 1
+        
+        # writing the data to disk
+        with open(f"./statistics/metastable_N={shape[0]}_M={shape[1]}.csv", "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
+
+start = time.time()
+
+for n in range(2, 50 + 1):
+    for i in range(2):
+        accumulate_stats((n, n))
+        print(f"Size ({n}, {n}), iteration {i + 1}")
+    
+end = time.time()
+
+print(f"time = {round(end - start, 2)}")

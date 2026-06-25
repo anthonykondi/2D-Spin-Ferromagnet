@@ -2,6 +2,11 @@ Due date: June 26, 2026
 Goals:
 - Numerically determine the probability of ending up in a metastable state for varying 
 r = M/N (where M is the number of columns and N is the number of rows).
+- Verify thermodynamic limit N, M -> inf for the case r = M/N = 1 fixed. Do this by getting
+many samples for each N from {1, ..., N_max} and showing that as N increases, the sample mean 
+of the fraction of metastable states of each kind gets closer (converges) to the theoretically 
+expected probability.
+- Implement multiprocessing to get multiple samples at same time
 
 Bonus:
 - Generalize the hamiltonian to a greater proximity (not just immediate neighbours).
