@@ -6,7 +6,6 @@ r = M/N (where M is the number of columns and N is the number of rows).
 many samples for each N from {1, ..., N_max} and showing that as N increases, the sample mean 
 of the fraction of metastable states of each kind gets closer (converges) to the theoretically 
 expected probability.
-- Implement multiprocessing to get multiple samples at same time
 
 Bonus:
 - Generalize the hamiltonian to a greater proximity (not just immediate neighbours).
@@ -15,6 +14,7 @@ evolves based on temperature (some kind of metropolis-hasting probabilistic upda
 and set it at some temperature for a "long" time to get what the phase looks like. (more
 visual project)
 - Make time evolution animation
+- Implement multiprocessing to get multiple samples at same time
 
 Method:
 - start with random lattice of spins

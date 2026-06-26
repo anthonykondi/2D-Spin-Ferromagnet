@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from pathlib import Path
-import os
-import time
+from matplotlib.animation import FuncAnimation
+import matplotlib.animation as animation
+import copy
 import csv
 
 rng = np.random.default_rng()
@@ -51,19 +51,19 @@ class Ferromagnet():
     def __init__(self, shape):
         self.shape = shape    # shape should be a tuple: (N, M)
         self._iters = 0       # keeps track of update iterations
-        self._lattice = self._fill_lattice()    # numpy array N x M, with random spin configuration
+        self.lattice = self._fill_lattice()    # numpy array N x M, with random spin configuration
         self._energetic_cells = self._init_energetic_cells()   # RandomizedSet with energetically unfavourable spin coordinates
         self.stabilized = False    # not true in general, but it is very unlikely it will initiallize in a metastable state
 
 
     def __getitem__(self, coords):
-        return self._lattice[coords]
+        return self.lattice[coords]
     
 
     def __setitem__(self, coord, value):
         if value not in (1, -1):
             raise TypeError("Spin can only take values +1 and -1")
-        self._lattice[coord] = value
+        self.lattice[coord] = value
         self._update_local_neighbourhood(coord)
 
 
@@ -119,9 +119,9 @@ class Ferromagnet():
         # computing energy favourability
         local_field = 0
         for check_coord in check_coords:
-            local_field += self._lattice[check_coord]    # adding each local spin
+            local_field += self.lattice[check_coord]    # adding each local spin
         # energy favourability is purely dependend on local alignment
-        if self._lattice[coord] * local_field > 0:
+        if self.lattice[coord] * local_field > 0:
             return True       # spin is aligned with local field
         return False          # spin not aligned with local field or equally in both directions
 
@@ -135,11 +135,8 @@ class Ferromagnet():
         return C
     
 
-    def plot(self, save=False, title="", c_num=0):
-        """c_num - convolution number (for smoother transitions)"""
-        if c_num > 0:
-            pass
-        plt.imshow(self._lattice, cmap="plasma")
+    def plot(self, save=False, title=""):
+        plt.imshow(self.lattice, cmap="plasma")
         plt.colorbar()
         if title:
             plt.title(title)
@@ -161,18 +158,19 @@ class Ferromagnet():
         old_spin = self.__getitem__(coord)
         new_spin = old_spin * -1
         self.__setitem__(coord, new_spin)   # flip, energetic cell update is done automatically
-
+        if len(self._energetic_cells) == 0:
+            self.stabilized = True
 
     def get_energy(self):
         E = 0
         # pairwise along the rows
         for j in range(self.shape[1]):
             for i in range(self.shape[0] - 1):
-                E += -1 * self._lattice[i, j] * self._lattice[i + 1, j]
+                E += -1 * self.lattice[i, j] * self.lattice[i + 1, j]
         # pairwise along the columns
         for i in range(self.shape[0]):
             for j in range(self.shape[1] - 1):
-                E += -1 * self._lattice[i, j] * self._lattice[i, j + 1]
+                E += -1 * self.lattice[i, j] * self.lattice[i, j + 1]
         return E
     
 
@@ -180,7 +178,7 @@ class Ferromagnet():
         """reach a metastable state by flipping spins until energetic_spins set is empty"""
         while len(self._energetic_cells) > 0:
             self.energetic_update()
-            # print(len(self._energetic_cells))
+            print(len(self._energetic_cells))   # comment this out when not debugging
         self.stabilized = True
 
     
@@ -208,6 +206,7 @@ def sample_metastable_state(shape):
 
 
 def accumulate_stats(shape):
+    """sample a metastable state classification from a ferromagnet and write to disk"""
     classification = sample_metastable_state(shape)
 
     try:
@@ -251,13 +250,88 @@ def accumulate_stats(shape):
             writer = csv.writer(file)
             writer.writerows(data)
 
-start = time.time()
 
-for n in range(2, 50 + 1):
-    for i in range(2):
-        accumulate_stats((n, n))
-        print(f"Size ({n}, {n}), iteration {i + 1}")
+def make_animation(A, n_updates, save_title=""):
+    """For title don't specify the file type (it will automatically be .mp4)"""
+    states = []
+    states.append(copy.deepcopy(A.lattice))
+    for i in range(n_updates):
+        A.energetic_update()
+        states.append(copy.deepcopy(A.lattice))
+        print(f"{i + 1} / {n_updates}")   # this is here for sanity
+
+    fig, ax = plt.subplots()
+
+    im = ax.imshow(states[0], cmap="plasma", animated=True)
+
+    def update(i):
+        im.set_data(states[i])
+        print(f"\rFrame {i+1}/{len(states)}", end="", flush=True)
+        return [im]
     
-end = time.time()
+    ani = FuncAnimation(
+        fig,
+        update,
+        frames=len(states),
+        interval=20,
+        blit=True,
+        repeat=False
+    )
 
-print(f"time = {round(end - start, 2)}")
+    # if save_title:
+    #     ani.save(
+    #         f"{save_title}.mp4",
+    #         writer="ffmpeg",
+    #         fps=120
+    #         )
+
+    plt.show()
+
+
+def make_metastable_animation(A, save_title="", spacing=1):
+    """For title don't specify the file type (it will automatically be .gif)"""
+    states = []
+    states.append(copy.deepcopy(A.lattice))
+    iter = 0
+    while not A.stabilized:
+        iter += 1
+        A.energetic_update()
+        if iter % spacing == 0:    # only add 1 in every spacing to the states
+            states.append(copy.deepcopy(A.lattice))
+        print(len(A._energetic_cells))    # this is here for sanity
+    states.append(copy.deepcopy(A.lattice))
+
+    fig, ax = plt.subplots()
+
+    im = ax.imshow(states[0], cmap="plasma", animated=True)
+
+    def update(i):
+        im.set_data(states[i])
+        print(f"\rFrame {i+1}/{len(states)}", end="", flush=True)
+        return [im]
+    
+    ani = FuncAnimation(
+        fig,
+        update,
+        frames=len(states),
+        interval=0.00000001,
+        blit=True,
+        repeat=False
+    )
+
+    # if save_title:
+    #     FFwriter = animation.FFMpegWriter(fps=120)
+    #     ani.save(
+    #         f"{save_title}.mp4",
+    #         writer=FFwriter
+    #         )
+
+    plt.show()
+
+
+# A = Ferromagnet((120, 120))
+# make_metastable_animation(A, "test_video1", spacing=40)
+
+
+for i in range(100):
+    accumulate_stats((50, 50))
