@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-import matplotlib.animation as animation
 import copy
 import csv
 
@@ -178,7 +177,7 @@ class Ferromagnet():
         """reach a metastable state by flipping spins until energetic_spins set is empty"""
         while len(self._energetic_cells) > 0:
             self.energetic_update()
-            print(len(self._energetic_cells))   # comment this out when not debugging
+            print(f"\rNumber of Energetic Cells: {len(self._energetic_cells)} ", end="")   # comment this out when not debugging
         self.stabilized = True
 
     
@@ -199,6 +198,7 @@ class Ferromagnet():
 
 
 def sample_metastable_state(shape):
+    """Collect 1 sample final state classification from a initially random ferromagnet"""
     A = Ferromagnet(shape)
     A.minimize_energy()
     calssification = A.classify()
@@ -251,14 +251,15 @@ def accumulate_stats(shape):
             writer.writerows(data)
 
 
-def make_animation(A, n_updates, save_title=""):
+def make_animation(A, n_updates, save_title="", spacing=1):
     """For title don't specify the file type (it will automatically be .mp4)"""
     states = []
     states.append(copy.deepcopy(A.lattice))
     for i in range(n_updates):
         A.energetic_update()
-        states.append(copy.deepcopy(A.lattice))
-        print(f"{i + 1} / {n_updates}")   # this is here for sanity
+        if (i + 1) % spacing == 0:
+            states.append(copy.deepcopy(A.lattice))
+        print(f"\r{i + 1} / {n_updates}", end="", flush=True)   # this is here for sanity
 
     fig, ax = plt.subplots()
 
@@ -273,17 +274,15 @@ def make_animation(A, n_updates, save_title=""):
         fig,
         update,
         frames=len(states),
-        interval=20,
+        interval=0.00001,
         blit=True,
         repeat=False
     )
 
-    # if save_title:
-    #     ani.save(
-    #         f"{save_title}.mp4",
-    #         writer="ffmpeg",
-    #         fps=120
-    #         )
+    if save_title:
+        ani.save(
+            f"./animations/{save_title}.gif"
+            )
 
     plt.show()
 
@@ -298,7 +297,7 @@ def make_metastable_animation(A, save_title="", spacing=1):
         A.energetic_update()
         if iter % spacing == 0:    # only add 1 in every spacing to the states
             states.append(copy.deepcopy(A.lattice))
-        print(len(A._energetic_cells))    # this is here for sanity
+        print(f"\r{len(A._energetic_cells)} ", end="")    # this is here for sanity
     states.append(copy.deepcopy(A.lattice))
 
     fig, ax = plt.subplots()
@@ -314,24 +313,33 @@ def make_metastable_animation(A, save_title="", spacing=1):
         fig,
         update,
         frames=len(states),
-        interval=0.00000001,
+        interval=0.00000001,    # setting it to the minimum
         blit=True,
         repeat=False
     )
 
-    # if save_title:
-    #     FFwriter = animation.FFMpegWriter(fps=120)
-    #     ani.save(
-    #         f"{save_title}.mp4",
-    #         writer=FFwriter
-    #         )
+    if save_title:
+        ani.save(
+            f"./animations/{save_title}.gif"
+            )
 
     plt.show()
+
+
+A = Ferromagnet((120, 120))
+
+# making a line down the middle
+for i in range(80, 120):
+    for j in range(120):
+        A[i, j] = -1
+
+make_metastable_animation(A, save_title="special_200_200_animation", spacing=200)
 
 
 # A = Ferromagnet((120, 120))
 # make_metastable_animation(A, "test_video1", spacing=40)
 
 
-for i in range(100):
-    accumulate_stats((50, 50))
+# for i in range(100):
+#     print(f"\n{i + 1} / 100")
+#     accumulate_stats((50, 50))
