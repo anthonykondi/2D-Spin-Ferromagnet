@@ -326,20 +326,31 @@ def make_metastable_animation(A, save_title="", spacing=1):
     plt.show()
 
 
-A = Ferromagnet((120, 120))
-
-# making a line down the middle
-for i in range(80, 120):
-    for j in range(120):
-        A[i, j] = -1
-
-make_metastable_animation(A, save_title="special_200_200_animation", spacing=200)
-
-
-# A = Ferromagnet((120, 120))
-# make_metastable_animation(A, "test_video1", spacing=40)
+def live_plot_metastable(A, spacing):
+    iter = 0
+    while not A.stabilized:
+            iter += 1
+            A.energetic_update()
+            if iter % spacing == 0:    # only add 1 in every spacing to the states
+                plt.imshow(A.lattice, cmap="plasma")
+                plt.pause(0.001) 
+            print(f"\r{len(A._energetic_cells)} ", end="")
 
 
-# for i in range(100):
-#     print(f"\n{i + 1} / 100")
-#     accumulate_stats((50, 50))
+A = Ferromagnet((200, 200))
+
+already_filled = np.zeros((200, 200))
+for n in range(1, 10): 
+    for i in range(200):
+        for j in range(200):
+            if np.sqrt((i - 100)**2 + (j - 100)**2) < 20*n and already_filled[i, j] == 0:
+                if n % 2 == 1:
+                    A[i, j] = 1
+                else:
+                    A[i, j] = -1
+                already_filled[i, j] = 1
+
+# live_plot_metastable(A, 1000)
+# make_animation(A, n_updates=100000, save_title="concentric_rings_200_200_animation", spacing=200)
+# make_metastable_animation(A, save_title="stable_stripes_parabola_200_200_animation", spacing=350)
+
