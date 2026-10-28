@@ -333,24 +333,25 @@ def live_plot_metastable(A, spacing):
             A.energetic_update()
             if iter % spacing == 0:    # only add 1 in every spacing to the states
                 plt.imshow(A.lattice, cmap="plasma")
-                plt.pause(0.001) 
+                plt.pause(0.01) 
             print(f"\r{len(A._energetic_cells)} ", end="")
 
 
-A = Ferromagnet((200, 200))
+A = Ferromagnet((40, 40))
 
-already_filled = np.zeros((200, 200))
-for n in range(1, 10): 
-    for i in range(200):
-        for j in range(200):
-            if np.sqrt((i - 100)**2 + (j - 100)**2) < 20*n and already_filled[i, j] == 0:
-                if n % 2 == 1:
-                    A[i, j] = 1
-                else:
-                    A[i, j] = -1
-                already_filled[i, j] = 1
+# already_filled = np.zeros((200, 200))
+# for n in range(1, 10): 
+#     for i in range(200):
+#         for j in range(200):
+#             if np.sqrt((i - 100)**2 + (j - 100)**2) < 20*n and already_filled[i, j] == 0:
+#                 if n % 2 == 1:
+#                     A[i, j] = 1
+#                 else:
+#                     A[i, j] = -1
+#                 already_filled[i, j] = 1
 
-# live_plot_metastable(A, 1000)
+live_plot_metastable(A, 1000)
 # make_animation(A, n_updates=100000, save_title="concentric_rings_200_200_animation", spacing=200)
 # make_metastable_animation(A, save_title="stable_stripes_parabola_200_200_animation", spacing=350)
+
 
